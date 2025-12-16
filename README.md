@@ -3,4 +3,5 @@
 -	Dễ xảy ra sai sót khi tính tiền hoặc ghi nhận đơn hàng,
 -	Khó kiểm soát doanh thu, nguyên liệu, nhân viên,
 -	Mất nhiều thời gian tổng hợp và thống kê.
+
 --> Do đó, em chọn đề tài “Thiết kế website quản lý quán cà phê” với mong muốn xây dựng một hệ thống giúp tự động hóa quá trình quản lý quán, giảm sai sót, tăng hiệu quả phục vụ, đồng thời giúp người quản lý dễ dàng theo dõi tình hình kinh doanh mọi lúc, mọi nơi thông qua trình duyệt web.
