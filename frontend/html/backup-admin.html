@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Sao lưu và khôi phục</title>
+    <link rel="stylesheet" />
+    <link rel="stylesheet" href="../css/backup.css" />
+  </head>
+
+  <body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="logo">☕</span>
+        <h2 class="format">QUẢN LÝ<br />QUÁN CÀ PHÊ</h2>
+      </div>
+
+      <nav>
+        <p class="menu-title">QUẢN LÝ CHUNG</p>
+        <ul class="menu">
+          <li>
+            <p>
+              <a href="all-table-admin.html" class="no-format"
+                >Danh sách các bàn</a
+              >
+            </p>
+          </li>
+        </ul>
+        <p class="menu-title">QUẢN LÝ</p>
+        <ul class="menu">
+          <li class="has-submenu">
+            <p class="submenu-toggle">Quản lý ▾</p>
+            <ul class="submenu">
+              <li><a href="category.html">Quản lý danh mục</a></li>
+              <li><a href="food.html">Quản lý món</a></li>
+              <li><a href="revenue-manage.html">Quản lý doanh thu</a></li>
+              <li><a href="table.html">Quản lý bàn</a></li>
+            </ul>
+          </li>
+        </ul>
+        <p class="menu-title">CÀI ĐẶT</p>
+        <ul class="menu">
+          <!-- 🧑‍💻 Thêm mới phần tài khoản -->
+          <li class="menu-item has-submenu">
+            <p>Tài khoản ▾</p>
+            <ul class="submenu">
+              <li>
+                <a href="change-password-admin.html">Thay đổi mật khẩu</a>
+              </li>
+              <li><a href="login.html" onclick="logout()">Đăng xuất</a></li>
+            </ul>
+          </li>
+        </ul>
+        <ul class="menu">
+          <li class="has-submenu">
+            <p>
+              <a href="sale-detail-admin.html" class="no-format">Hóa đơn</a>
+            </p>
+          </li>
+        </ul>
+        <ul class="menu">
+          <li class="has-submenu">
+            <p><a href="backup-admin.html" class="no-format">Sao lưu</a></p>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+    <!-- Main -->
+    <main class="main">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="user-info">
+          <span>Quản trị viên - ADMIN</span>
+          <img src="../../images/admin.jpg" class="avatar" />
+        </div>
+      </header>
+      <div class="container">
+        <div class="card">
+          <div class="card-header">Sao lưu & Phục hồi dữ liệu</div>
+          <div class="card-body">
+            <!-- SAO LƯU -->
+            <label class="form-label">Sao lưu</label>
+            <button class="btn-primary full-btn" onclick="backupData()">
+              <i class="fa fa-download"></i> SAO LƯU DỮ LIỆU
+            </button>
+            <!-- PHỤC HỒI -->
+            <label class="form-label" style="margin-top: 20px">Phục hồi</label>
+            <div class="file-row">
+              <input
+                type="text"
+                id="backup-text"
+                class="form-input"
+                placeholder="Chọn tệp..."
+                readonly
+              />
+              <input type="file" id="backup-file-input" style="display: none" />
+              <button
+                class="btn-outline"
+                onclick="document.getElementById('backup-file-input').click()"
+              >
+                Browse
+              </button>
+            </div>
+            <button
+              class="btn-primary full-btn"
+              style="margin-top: 15px"
+              onclick="restoreData()"
+            >
+              <i class="fa fa-upload"></i> PHỤC HỒI DỮ LIỆU
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script src="../js/backup.js"></script>
+  </body>
+</html>

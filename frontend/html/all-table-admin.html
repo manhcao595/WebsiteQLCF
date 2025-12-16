@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Danh sách bàn</title>
+    <link rel="stylesheet" href="../css/all-table.css" />
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="logo">☕</span>
+        <h2 class="format">QUẢN LÝ<br />QUÁN CÀ PHÊ</h2>
+      </div>
+      <nav>
+        <p class="menu-title">QUẢN LÝ CHUNG</p>
+        <ul class="menu">
+          <li class="active">
+            <p>
+              <a href="all-table-admin.html" class="no-format"
+                >Danh sách các bàn</a
+              >
+            </p>
+          </li>
+        </ul>
+        <p class="menu-title">QUẢN LÝ</p>
+        <ul class="menu">
+          <li class="has-submenu">
+            <p class="submenu-toggle">Quản lý ▾</p>
+            <ul class="submenu">
+              <li>
+                <a href="category.html">Quản lý danh mục</a>
+              </li>
+              <li><a href="food.html">Quản lý món</a></li>
+              <li>
+                <a href="revenue-manage.html">Quản lý doanh thu</a>
+              </li>
+              <li><a href="table.html">Quản lý bàn</a></li>
+            </ul>
+          </li>
+        </ul>
+        <p class="menu-title">CÀI ĐẶT</p>
+        <ul class="menu">
+          <!-- 🧑‍💻 Thêm mới phần tài khoản -->
+          <li class="menu-item has-submenu">
+            <p>Tài khoản ▾</p>
+            <ul class="submenu">
+              <li>
+                <a href="change-password-admin.html">Thay đổi mật khẩu</a>
+              </li>
+              <li><a href="login.html" onclick="logout()">Đăng xuất</a></li>
+            </ul>
+          </li>
+        </ul>
+        <ul class="menu">
+          <li class="has-submenu">
+            <p>
+              <a href="sale-detail-admin.html" class="no-format">Hóa đơn</a>
+            </p>
+          </li>
+        </ul>
+        <ul class="menu">
+          <li class="has-submenu">
+            <p>
+              <a href="backup-admin.html" class="no-format">Sao lưu</a>
+            </p>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+    <!-- Main -->
+    <main class="main">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="user-info">
+          <span>Quản trị viên - ADMIN</span>
+          <img src="../../images/admin.jpg" class="avatar" />
+        </div>
+      </header>
+      <div class="content">
+        <h2>Danh sách các bàn</h2>
+        <!-- Các khối thao tác -->
+        <div class="action-row">
+          <div class="card small">
+            <h3>Thêm món</h3>
+            <!-- Select danh mục -->
+            <select id="select-category">
+              <option value="">Tất cả</option>
+            </select>
+            <!-- Container select món + textbox giá -->
+            <div style="display: flex; gap: 8px">
+              <select id="select-food" style="flex: 2">
+                <option value="">-- Chọn món --</option>
+              </select>
+              <input
+                type="text"
+                id="food-price"
+                placeholder="Giá"
+                readonly
+                style="flex: 1"
+              />
+            </div>
+            <input type="number" id="food-quantity" value="1" min="1" />
+            <button class="btn-primary" onclick="addFoodToTable()">
+              THÊM MÓN
+            </button>
+          </div>
+          <div class="card small">
+            <h3>Thanh toán</h3>
+            <label>Giảm giá (%)</label>
+            <input type="number" id="discount" value="0" readonly />
+            <button class="btn-primary" onclick="payBill()">THANH TOÁN</button>
+          </div>
+        </div>
+        <!-- Danh sách bàn và hóa đơn -->
+        <div class="bottom-row">
+          <div class="card table-list">
+            <h3>Danh sách các bàn</h3>
+            <div class="tables"></div>
+          </div>
+          <div class="card bill">
+            <h3 id="bill-title">Hóa đơn</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Tên</th>
+                  <th>Số lượng</th>
+                  <th>Giá</th>
+                  <th>Tổng tiền</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script src="../js/all-table.js"></script>
+  </body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Hóa đơn</title>
+    <link rel="stylesheet" href="../css/sale-detail.css" />
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="logo">☕</span>
+        <h2 class="format">QUẢN LÝ<br />QUÁN CÀ PHÊ</h2>
+      </div>
+      <nav>
+        <p class="menu-title">QUẢN LÝ CHUNG</p>
+        <ul class="menu">
+          <li>
+            <p>
+              <a href="all-table-staff.html" class="no-format"
+                >Danh sách các bàn</a
+              >
+            </p>
+          </li>
+        </ul>
+        <p class="menu-title">CÀI ĐẶT</p>
+        <ul class="menu">
+          <!-- 🧑‍💻 Thêm mới phần tài khoản -->
+          <li class="menu-item has-submenu">
+            <p>Tài khoản ▾</p>
+            <ul class="submenu">
+              <li>
+                <a href="change-password-staff.html">Thay đổi mật khẩu</a>
+              </li>
+              <li><a href="login.html" onclick="logout()">Đăng xuất</a></li>
+            </ul>
+          </li>
+        </ul>
+        <ul class="menu">
+          <li class="has-submenu active">
+            <p>
+              <a href="sale-detail-staff.html" class="no-format">Hóa đơn</a>
+            </p>
+          </li>
+        </ul>
+        <ul class="menu">
+          <li class="has-submenu">
+            <p><a href="backup-staff.html" class="no-format">Sao lưu</a></p>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+    <!-- Main -->
+    <main class="main">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="user-info">
+          <span>Nhân viên - STAFF</span>
+          <img src="../../images/staff.jpg" class="avatar" />
+        </div>
+      </header>
+      <div class="content-wrapper">
+        <div class="container-flex">
+          <!-- DANH SÁCH HÓA ĐƠN -->
+          <div class="card table-card">
+            <h3>Chi tiết hóa đơn</h3>
+            <div class="export-buttons">
+              <button onclick="printInvoice()">Print</button>
+            </div>
+            <div class="search-box-1">
+              <label>Tìm kiếm:</label>
+              <input
+                type="text"
+                class="input"
+                placeholder="Nhập mã hóa đơn..."
+              />
+            </div>
+            <table class="table" id="sale-detail-table">
+              <thead>
+                <tr>
+                  <th>Mã chi tiết hóa đơn</th>
+                  <th>Mã món</th>
+                  <th>Số lượng</th>
+                  <th>Giá</th>
+                  <th>Thành tiền</th>
+                </tr>
+              </thead>
+              <tbody id="sale-detail-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script src="../js/sale-detail.js"></script>
+  </body>
+</html>

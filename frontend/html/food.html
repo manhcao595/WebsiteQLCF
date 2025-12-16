@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Quản lý món</title>
+    <link rel="stylesheet" />
+    <link rel="stylesheet" href="../css/food.css" />
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="logo">☕</span>
+        <h2 class="format">QUẢN LÝ<br />QUÁN CÀ PHÊ</h2>
+      </div>
+      <nav>
+        <p class="menu-title">QUẢN LÝ CHUNG</p>
+        <ul class="menu">
+          <li>
+            <p><a href="all-table-admin.html" class="no-format">Danh sách các bàn</a></p>
+          </li>
+        </ul>
+        <p class="menu-title">QUẢN LÝ</p>
+        <ul class="menu">
+          <li class="has-submenu  active">
+            <p class="submenu-toggle">Quản lý ▾</p>
+            <ul class="submenu">
+              <li><a href="category.html">Quản lý danh mục</a></li>
+              <li><a href="food.html">Quản lý món</a></li>
+              <li><a href="revenue-manage.html">Quản lý doanh thu</a></li>
+              <li><a href="table.html">Quản lý bàn</a></li>
+            </ul>
+          </li>
+        </ul>
+        <p class="menu-title">CÀI ĐẶT</p>
+        <ul class="menu">
+          <!-- 🧑‍💻 Thêm mới phần tài khoản -->
+          <li class="menu-item has-submenu">
+            <p>Tài khoản ▾</p>
+            <ul class="submenu">
+              <li><a href="change-password-admin.html">Thay đổi mật khẩu</a></li>
+              <li><a href="login.html" onclick="logout()">Đăng xuất</a></li>
+            </ul>
+          </li>
+        </ul>
+        <ul class="menu">
+          <li class="has-submenu">
+            <p><a href="sale-detail-admin.html" class="no-format">Hóa đơn</a></p>
+          </li>
+        </ul>
+        <ul class="menu">
+          <li class="has-submenu">
+            <p><a href="backup-admin.html" class="no-format">Sao lưu</a></p>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+    <!-- Main -->
+    <main class="main">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="user-info">
+          <span>Quản trị viên - ADMIN</span>
+          <img src="../../images/admin.jpg" class="avatar" />
+        </div>
+      </header>
+      <div class="page-container">
+        <div class="content-grid">
+        <!-- FORM BÊN TRÁI -->
+        <div class="card form-card">
+          <h3>Quản lý món</h3>
+          <label>Mã món</label>
+          <input type="text" class="input" id="item-id" readonly />
+          <label>Tên món</label>
+          <input type="text" class="input" id="item-name" />
+          <label>Tên danh mục</label>
+          <select class="input" id="item-category"></select>
+          <label>Giá</label>
+          <input type="number" class="input" id="item-price" />
+          <label>Trạng thái</label>
+          <select class="input" id="item-status">
+            <option value="1">Sử dụng</option>
+            <option value="0">Ngưng bán</option>
+          </select>
+          <div class="btn-group">
+            <button class="btn blue" onclick="addFood()">THÊM</button>
+            <button class="btn blue" onclick="updateFood()">SỬA</button>
+            <button class="btn red" onclick="deleteFood()">XÓA</button>
+          </div>
+        </div> <!-- ❗ ĐÃ THÊM THẺ ĐÓNG FORM -->
+        <!-- BẢNG BÊN PHẢI -->
+        <div class="card table-card">
+          <h3>Danh sách món</h3>
+          <div class="export-buttons">
+            <button onclick="exportExcel('MenuItem')">Xuất Excel</button>
+            <button onclick="exportPDF('MenuItem')">Xuất PDF</button>
+          </div>
+          <div class="search-box-1">
+            <label>Tìm kiếm:</label>
+            <input type="text" class="input" placeholder="Nhập tên món..."/>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Mã món</th>
+                <th>Tên món</th>
+                <th>Mã danh mục</th>
+                <th>Giá</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody></tbody> <!-- phải có thẻ tbody -->
+          </table>
+          <div id="pagination" class="pagination"></div>
+      </div>
+  </main>
+  <script src="../js/food.js"></script>
+  </body>
+</html>

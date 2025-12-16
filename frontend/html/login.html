@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Quán Cafe - Login</title>
+    <!-- Liên kết tới file CSS riêng -->
+    <link rel="stylesheet" href="../css/login.css">
+  </head>
+  <body>
+    <div class="card" role="main" aria-labelledby="loginTitle">
+    <h1 id="loginTitle">QUẢN LÝ QUÁN CÀ PHÊ</h1>
+  <form onsubmit="login(event)">
+    <div class="field">
+      <input id="user" class="text-input" type="text" placeholder="Tên đăng nhập" required>
+    </div>
+    <div class="field">
+      <input id="pass" class="text-input" type="password" placeholder="Mật khẩu" required>
+    </div>
+    <div class="meta-row">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="remember">
+        <span>Nhớ mật khẩu</span>
+      </label>
+    </div>
+    <button class="btn-login" type="submit">ĐĂNG NHẬP</button>
+  </form>
+  <script src="../js/login.js"></script>
+  </body>
+</html>
