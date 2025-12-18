@@ -1,36 +1,53 @@
-let tables = []; // toàn bộ dữ liệu
-let currentPage = 1;
-const rowsPerPage = 10;
-
+// ===============================
+// LOGOUT
+// ===============================
 function logout() {
   localStorage.removeItem("currentUser");
   localStorage.removeItem("role");
   window.location.href = "login.html";
 }
+const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+if (!currentUser) {
+  alert("Bạn chưa đăng nhập!");
+  location.href = "login.html";
+}
 
-const API = "http://localhost:3000/api/tables";
+function logout() {
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("role");
+  location.href = "login.html";
+}
+// ===============================
+// LOCALSTORAGE KEY
+// ===============================
+const TABLE_KEY = "tables";
+
+// ===============================
+// BIẾN TOÀN CỤC
+// ===============================
+let tables = [];
+let currentPage = 1;
+const rowsPerPage = 10;
+
+// ===============================
+// LOCALSTORAGE HELPER
+// ===============================
+function getTables() {
+  return JSON.parse(localStorage.getItem(TABLE_KEY)) || [];
+}
+
+function saveTables(data) {
+  localStorage.setItem(TABLE_KEY, JSON.stringify(data));
+}
 
 // ===============================
 // LOAD DỮ LIỆU
 // ===============================
-async function loadTables() {
-  try {
-    const res = await fetch(API);
-    const data = await res.json();
-
-    if (!Array.isArray(data)) {
-      console.error("API trả về không phải mảng:", data);
-      return;
-    }
-
-    tables = data;
-    currentPage = 1;
-    renderTable();
-    renderPagination();
-  } catch (err) {
-    console.error(err);
-    alert("Không thể load dữ liệu bàn!");
-  }
+function loadTables() {
+  tables = getTables();
+  currentPage = 1;
+  renderTable();
+  renderPagination();
 }
 
 // ===============================
@@ -51,11 +68,13 @@ function renderTable() {
       <td>${t.TableName}</td>
       <td>${t.Status}</td>
     `;
+
     row.onclick = () => {
       document.getElementById("table-id").value = t.TableID;
       document.getElementById("table-name").value = t.TableName;
       document.getElementById("table-status").value = t.Status;
     };
+
     tbody.appendChild(row);
   });
 }
@@ -73,11 +92,11 @@ function renderPagination() {
     btn.textContent = i;
     if (i === currentPage) btn.classList.add("active");
 
-    btn.addEventListener("click", () => {
+    btn.onclick = () => {
       currentPage = i;
       renderTable();
       renderPagination();
-    });
+    };
 
     pageNumbers.appendChild(btn);
   }
@@ -100,7 +119,7 @@ function renderPagination() {
 }
 
 // ===============================
-// XÓA FORM
+// CLEAR FORM
 // ===============================
 function clearForm() {
   document.getElementById("table-id").value = "";
@@ -111,79 +130,84 @@ function clearForm() {
 // ===============================
 // THÊM BÀN
 // ===============================
-async function addTable() {
-  const tableName = document.getElementById("table-name").value;
+function addTable() {
+  const tableName = document.getElementById("table-name").value.trim();
   const status = document.getElementById("table-status").value;
 
-  try {
-    const res = await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tableName, status }),
-    });
-    const data = await res.json();
-    alert(data.message);
-    clearForm();
-    loadTables();
-  } catch (err) {
-    console.error(err);
-    alert("Thêm bàn thất bại!");
-  }
+  if (!tableName) return alert("Tên bàn không được để trống!");
+
+  let data = getTables();
+
+  const newTable = {
+    TableID: data.length > 0 ? Math.max(...data.map((t) => t.TableID)) + 1 : 1,
+    TableName: tableName,
+    Status: status,
+  };
+
+  data.push(newTable);
+  saveTables(data);
+
+  alert("Thêm bàn thành công!");
+  clearForm();
+  loadTables();
 }
 
 // ===============================
 // CẬP NHẬT BÀN
 // ===============================
-async function updateTable() {
-  const id = document.getElementById("table-id").value;
-  const tableName = document.getElementById("table-name").value;
+function updateTable() {
+  const id = parseInt(document.getElementById("table-id").value);
+  const tableName = document.getElementById("table-name").value.trim();
   const status = document.getElementById("table-status").value;
 
-  try {
-    const res = await fetch(`${API}/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tableName, status }),
-    });
-    const data = await res.json();
-    alert(data.message);
-    clearForm();
-    loadTables();
-  } catch (err) {
-    console.error(err);
-    alert("Cập nhật bàn thất bại!");
-  }
+  if (!id) return alert("Chọn bàn để cập nhật!");
+  if (!tableName) return alert("Tên bàn không được để trống!");
+
+  let data = getTables();
+  const index = data.findIndex((t) => t.TableID === id);
+
+  if (index === -1) return alert("Bàn không tồn tại!");
+
+  data[index].TableName = tableName;
+  data[index].Status = status;
+
+  saveTables(data);
+
+  alert("Cập nhật thành công!");
+  clearForm();
+  loadTables();
 }
 
 // ===============================
 // XÓA BÀN
 // ===============================
-async function deleteTable() {
-  const id = document.getElementById("table-id").value;
+function deleteTable() {
+  const id = parseInt(document.getElementById("table-id").value);
   if (!id) return alert("Chọn bàn để xóa!");
 
-  try {
-    const res = await fetch(`${API}/${id}`, { method: "DELETE" });
-    const data = await res.json();
-    alert(data.message);
-    clearForm();
-    loadTables();
-  } catch (err) {
-    console.error(err);
-    alert("Xóa bàn thất bại!");
-  }
-}
-function exportExcel(tableName) {
-  if (!tableName) return alert("Không xác định bảng để xuất Excel!");
-  window.open(`http://localhost:3000/api/export/${tableName}/excel`);
+  if (!confirm("Bạn chắc chắn muốn xóa bàn này?")) return;
+
+  let data = getTables().filter((t) => t.TableID !== id);
+  saveTables(data);
+
+  alert("Xóa bàn thành công!");
+  clearForm();
+  loadTables();
 }
 
-function exportPDF(tableName) {
-  if (!tableName) return alert("Không xác định bảng để xuất PDF!");
-  window.open(`http://localhost:3000/api/export/${tableName}/pdf`);
-}
 // ===============================
-// KHI LOAD TRANG
+// EXPORT (MÔ PHỎNG)
+// ===============================
+function exportExcel() {
+  alert("Xuất Excel mô phỏng (không backend)");
+}
+
+function exportPDF() {
+  alert("Xuất PDF mô phỏng (không backend)");
+}
+
+// ===============================
+// INIT
 // ===============================
 window.onload = () => {
   loadTables();

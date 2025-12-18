@@ -1,110 +1,39 @@
-// frontend/backup.js
+// ===============================
+// ĐĂNG XUẤT
+// ===============================
 function logout() {
   localStorage.removeItem("currentUser");
   localStorage.removeItem("role");
   window.location.href = "login.html";
 }
+const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+if (!currentUser) {
+  alert("Bạn chưa đăng nhập!");
+  location.href = "login.html";
+}
 
+function logout() {
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("role");
+  location.href = "login.html";
+}
 // ===============================
-// Load danh sách backup
+// LOAD BACKUP (CHỈ HIỂN THỊ HƯỚNG DẪN)
 // ===============================
-async function loadBackups() {
+function loadBackups() {
   const backupInput = document.getElementById("backup-text");
   backupInput.value = "";
-
-  try {
-    const res = await fetch("http://localhost:3000/api/backup/list");
-    if (!res.ok) throw new Error("Lỗi khi tải danh sách backup");
-
-    const backups = await res.json();
-    window.backupFiles = backups;
-
-    if (backups.length === 0) {
-      backupInput.placeholder = "Chưa có file backup nào";
-    } else {
-      backupInput.placeholder = backups[0];
-    }
-  } catch (err) {
-    console.error(err);
-    alert("Lỗi khi tải danh sách backup!");
-  }
+  backupInput.placeholder = "Chọn file backup (.json) để phục hồi";
 }
 
 // ===============================
-// Browse file backup
+// BROWSE FILE BACKUP (TỪ MÁY)
 // ===============================
 function browseFile() {
-  if (!window.backupFiles || window.backupFiles.length === 0) {
-    alert("Chưa có file backup nào");
-    return;
-  }
-
-  const fileName = prompt(
-    "Chọn file backup:\n" + window.backupFiles.join("\n"),
-    window.backupFiles[0]
-  );
-
-  if (fileName && window.backupFiles.includes(fileName)) {
-    document.getElementById("backup-text").value = fileName;
-  }
+  document.getElementById("backup-file-input").click();
 }
 
-// ===============================
-// Sao lưu dữ liệu
-// ===============================
-async function backupData() {
-  try {
-    const res = await fetch("http://localhost:3000/api/backup/create");
-    if (!res.ok) {
-      const errData = await res.json();
-      throw new Error(errData.message || "Lỗi khi tạo backup");
-    }
-
-    const backupFile = await res.json();
-    alert("Backup thành công: " + backupFile);
-    loadBackups();
-  } catch (err) {
-    console.error(err);
-    alert("Lỗi khi sao lưu dữ liệu!");
-  }
-}
-
-// ===============================
-// Phục hồi dữ liệu
-// ===============================
-async function restoreData() {
-  const fileName = document.getElementById("backup-text").value;
-  if (!fileName) {
-    alert("Vui lòng chọn file backup để phục hồi!");
-    return;
-  }
-
-  if (
-    !confirm(
-      "Bạn có chắc chắn muốn phục hồi dữ liệu từ file: " + fileName + "?"
-    )
-  ) {
-    return;
-  }
-
-  try {
-    const res = await fetch("http://localhost:3000/api/backup/restore", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fileName }),
-    });
-
-    if (!res.ok) {
-      const errData = await res.json();
-      throw new Error(errData.message || "Lỗi khi phục hồi dữ liệu");
-    }
-
-    alert("Phục hồi dữ liệu thành công!");
-  } catch (err) {
-    console.error(err);
-    alert("Lỗi khi phục hồi dữ liệu!");
-  }
-}
+// Khi chọn file
 const fileInput = document.getElementById("backup-file-input");
 fileInput.addEventListener("change", () => {
   if (fileInput.files.length > 0) {
@@ -113,6 +42,71 @@ fileInput.addEventListener("change", () => {
 });
 
 // ===============================
-// Load danh sách backup khi mở trang
+// SAO LƯU DỮ LIỆU (DOWNLOAD JSON)
+// ===============================
+function backupData() {
+  try {
+    const data = JSON.stringify(localStorage, null, 2);
+
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `backup_${Date.now()}.json`;
+    a.click();
+
+    URL.revokeObjectURL(url);
+
+    alert("Sao lưu dữ liệu thành công!");
+  } catch (err) {
+    console.error(err);
+    alert("Lỗi khi sao lưu dữ liệu!");
+  }
+}
+
+// ===============================
+// PHỤC HỒI DỮ LIỆU (IMPORT JSON)
+// ===============================
+function restoreData() {
+  const file = fileInput.files[0];
+
+  if (!file) {
+    alert("Vui lòng chọn file backup để phục hồi!");
+    return;
+  }
+
+  if (
+    !confirm(
+      "Phục hồi dữ liệu sẽ ghi đè toàn bộ dữ liệu hiện tại.\nBạn có chắc chắn?"
+    )
+  ) {
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+
+      localStorage.clear();
+      Object.keys(data).forEach((key) => {
+        localStorage.setItem(key, data[key]);
+      });
+
+      alert("Phục hồi dữ liệu thành công!");
+      location.reload();
+    } catch (err) {
+      console.error(err);
+      alert("File backup không hợp lệ!");
+    }
+  };
+
+  reader.readAsText(file);
+}
+
+// ===============================
+// KHỞI TẠO
 // ===============================
 window.addEventListener("DOMContentLoaded", loadBackups);
