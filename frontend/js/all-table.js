@@ -1,372 +1,305 @@
+// ==================================================
+// AUTH
+// ==================================================
 let currentTableID = null;
-let currentBill = []; // Mảng lưu tạm hóa đơn
+let currentBill = [];
 
-// ================================
-// KIỂM TRA ĐĂNG NHẬP & PHÂN QUYỀN
-// ================================
 const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-
 if (!currentUser) {
   alert("Bạn chưa đăng nhập!");
-  window.location.href = "login.html";
-}
-
-const page = window.location.pathname;
-
-// Trang admin
-if (page.includes("admin") && currentUser.role !== "manager") {
-  alert("Bạn không có quyền truy cập trang này!");
-  window.location.href = "login.html";
-}
-
-// Trang staff
-if (page.includes("staff") && currentUser.role !== "staff") {
-  alert("Bạn không có quyền truy cập trang này!");
-  window.location.href = "login.html";
+  location.href = "login.html";
 }
 
 function logout() {
   localStorage.removeItem("currentUser");
   localStorage.removeItem("role");
-  window.location.href = "login.html";
+  location.href = "login.html";
 }
 
-// ==============================
-// Hàm format tiền (dấu chấm ngăn cách)
-// ==============================
+// ==================================================
+// LOCALSTORAGE KEYS
+// ==================================================
+const TABLE_KEY = "tables";
+const CATEGORY_KEY = "categories";
+const FOOD_KEY = "foods";
+const SALE_KEY = "sales";
+const SALE_COUNTER_KEY = "sale_counter"; // 👈 dùng cho ID tăng dần
+
+// ==================================================
+// HELPER
+// ==================================================
 function formatNumber(num) {
   return Number(num).toLocaleString("vi-VN");
 }
 
-// ==============================
-// Lưu/Load hóa đơn tạm vào localStorage
-// ==============================
-function saveBillToLocalStorage(tableID) {
+function getData(key) {
+  return JSON.parse(localStorage.getItem(key)) || [];
+}
+
+function saveData(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+// ==================================================
+// SALE ID (HD1, HD2, HD3...)
+// ==================================================
+function generateSaleID() {
+  let counter = Number(localStorage.getItem(SALE_COUNTER_KEY)) || 0;
+  counter++;
+  localStorage.setItem(SALE_COUNTER_KEY, counter);
+  return "HD" + counter;
+}
+
+// ==================================================
+// BILL TEMP (theo bàn)
+// ==================================================
+function saveBill(tableID) {
   localStorage.setItem(`bill_${tableID}`, JSON.stringify(currentBill));
 }
 
-function loadBillFromLocalStorage(tableID) {
-  const data = localStorage.getItem(`bill_${tableID}`);
-  return data ? JSON.parse(data) : [];
+function loadBill(tableID) {
+  return JSON.parse(localStorage.getItem(`bill_${tableID}`)) || [];
 }
 
-// ==============================
-// Load danh sách bàn
-// ==============================
-async function loadAllTables() {
-  try {
-    const res = await fetch("http://localhost:3000/api/tables");
-    const data = await res.json();
+// ==================================================
+// LOAD TABLES
+// ==================================================
+function loadAllTables() {
+  const tables = getData(TABLE_KEY);
+  const wrapper = document.querySelector(".tables");
+  wrapper.innerHTML = "";
 
-    const wrapper = document.querySelector(".tables");
-    wrapper.innerHTML = "";
+  tables.forEach((t) => {
+    const btn = document.createElement("button");
+    const tempBill = loadBill(t.TableID);
+    const occupied = tempBill.length > 0;
 
-    data.forEach((t) => {
-      const btn = document.createElement("button");
-      btn.className = `table ${t.Status === "Trống" ? "green" : "red"}`;
-      btn.innerHTML = `${t.TableName}<br><small>${t.Status}</small>`;
-      btn.dataset.tableId = t.TableID;
+    btn.className = `table ${occupied ? "red" : "green"}`;
+    btn.innerHTML = `${t.TableName}<br><small>${
+      occupied ? "Đã có người" : "Trống"
+    }</small>`;
+    btn.dataset.tableId = t.TableID;
 
-      // Kiểm tra tạm hóa đơn
-      const tempBill = loadBillFromLocalStorage(t.TableID);
-      if (tempBill.length > 0) {
-        btn.classList.remove("green");
-        btn.classList.add("red");
-        btn.querySelector("small").textContent = "Đã có người";
-      }
+    btn.onclick = () => {
+      currentTableID = t.TableID;
+      currentBill = loadBill(currentTableID);
+      renderBill(t.TableName);
+    };
 
-      btn.addEventListener("click", () => {
-        currentTableID = t.TableID;
-        currentBill = loadBillFromLocalStorage(currentTableID);
-        renderBill(t.TableName);
-      });
-
-      wrapper.appendChild(btn);
-    });
-  } catch (err) {
-    console.error("Lỗi load bàn:", err);
-  }
+    wrapper.appendChild(btn);
+  });
 }
 
-// ==============================
-// Cập nhật trạng thái bàn
-// ==============================
-function updateTableStatus(tableID, isOccupied = true) {
-  const tableButtons = document.querySelectorAll(".tables button");
-
-  tableButtons.forEach((btn) => {
-    if (Number(btn.dataset.tableId) === Number(tableID)) {
-      btn.classList.toggle("green", !isOccupied);
-      btn.classList.toggle("red", isOccupied);
-      btn.querySelector("small").textContent = isOccupied
+// ==================================================
+// UPDATE TABLE STATUS (UI)
+// ==================================================
+function updateTableStatus(tableID, occupied) {
+  document.querySelectorAll(".tables button").forEach((btn) => {
+    if (+btn.dataset.tableId === +tableID) {
+      btn.className = `table ${occupied ? "red" : "green"}`;
+      btn.querySelector("small").textContent = occupied
         ? "Đã có người"
         : "Trống";
     }
   });
 }
 
-// ==============================
-// Render hóa đơn
-// ==============================
+// ==================================================
+// RENDER BILL
+// ==================================================
 function renderBill(tableName) {
   const tbody = document.querySelector(".bill tbody");
   const title = document.getElementById("bill-title");
-  title.textContent = `Hóa đơn của '${tableName}'`;
+  title.textContent = tableName
+    ? `Hóa đơn của '${tableName}'`
+    : "Chưa chọn bàn";
 
   tbody.innerHTML = "";
-  let totalAmount = 0;
+  let total = 0;
 
-  currentBill.forEach((item, index) => {
-    const total = Number(item.Price) * Number(item.Quantity);
-    totalAmount += total;
+  currentBill.forEach((item, i) => {
+    const amount = item.Price * item.Quantity;
+    total += amount;
 
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${item.ItemName}</td>
-      <td>${item.Quantity}</td>
-      <td>${formatNumber(item.Price)}</td>
-      <td>${formatNumber(total)}</td>
-      <td>
-        <button class="btn-edit" onclick="editQuantity(${index})">Sửa</button>
-        <button class="btn-delete" onclick="removeItem(${index})">Xóa</button>
-      </td>
+    tbody.innerHTML += `
+      <tr>
+        <td>${item.ItemName}</td>
+        <td>${item.Quantity}</td>
+        <td>${formatNumber(item.Price)}</td>
+        <td>${formatNumber(amount)}</td>
+        <td class="action-cell">
+          <button class="btn-edit" onclick="editQuantity(${i})">Sửa</button>
+          <button class="btn-delete" onclick="removeItem(${i})">Xóa</button>
+        </td>
+      </tr>
     `;
-    tbody.appendChild(row);
   });
 
-  // Hàng tổng tiền
-  const totalRow = document.createElement("tr");
-  totalRow.innerHTML = `
-    <td colspan="3" style="text-align:right"><b>Tổng cộng:</b></td>
-    <td><b>${formatNumber(totalAmount)}</b></td>
-    <td></td>
+  tbody.innerHTML += `
+    <tr>
+      <td colspan="3" align="right"><b>Tổng:</b></td>
+      <td><b>${formatNumber(total)}</b></td>
+      <td></td>
+    </tr>
   `;
-  tbody.appendChild(totalRow);
 
-  // Tự động set giảm giá khi render
-  autoSetDiscount(totalAmount);
+  autoSetDiscount(total);
 }
 
-// ==============================
-// Sửa số lượng món
-// ==============================
+// ==================================================
+// BILL ACTION
+// ==================================================
 function editQuantity(index) {
-  const newQty = prompt("Nhập số lượng mới:", currentBill[index].Quantity);
-  const qty = Number(newQty);
-  if (isNaN(qty) || qty <= 0) {
-    alert("Số lượng không hợp lệ!");
-    return;
-  }
+  const qty = Number(prompt("Nhập số lượng mới:", currentBill[index].Quantity));
+  if (qty <= 0) return alert("Số lượng không hợp lệ!");
   currentBill[index].Quantity = qty;
-  saveBillToLocalStorage(currentTableID);
-  renderBill(document.getElementById("bill-title").textContent.split("'")[1]);
+  saveBill(currentTableID);
+  renderBill(getTableName(currentTableID));
 }
 
-// ==============================
-// Thêm món vào hóa đơn tạm
-// ==============================
+function removeItem(index) {
+  currentBill.splice(index, 1);
+  saveBill(currentTableID);
+  renderBill(getTableName(currentTableID));
+  if (currentBill.length === 0) updateTableStatus(currentTableID, false);
+}
+
 function addFoodToTable() {
   if (!currentTableID) return alert("Vui lòng chọn bàn!");
 
   const foodSelect = document.getElementById("select-food");
-  const quantityInput = document.getElementById("food-quantity");
+  const qty = Number(document.getElementById("food-quantity").value);
+  if (!foodSelect.value || qty <= 0) return alert("Dữ liệu không hợp lệ!");
 
   const itemID = foodSelect.value;
-  const itemName = foodSelect.selectedOptions[0].textContent;
+  const itemName = foodSelect.selectedOptions[0].text;
   const price = Number(foodSelect.selectedOptions[0].dataset.price);
-  const quantity = Number(quantityInput.value);
 
-  if (!itemID || quantity <= 0) return alert("Chọn món và số lượng hợp lệ");
-
-  const existing = currentBill.find((i) => i.ItemID === itemID);
-  if (existing) {
-    existing.Quantity += quantity;
-  } else {
+  const exist = currentBill.find((i) => i.ItemID === itemID);
+  if (exist) exist.Quantity += qty;
+  else {
     currentBill.push({
       ItemID: itemID,
       ItemName: itemName,
       Price: price,
-      Quantity: quantity,
+      Quantity: qty,
     });
   }
 
-  saveBillToLocalStorage(currentTableID);
-  renderBill(document.getElementById("bill-title").textContent.split("'")[1]);
+  saveBill(currentTableID);
+  renderBill(getTableName(currentTableID));
   updateTableStatus(currentTableID, true);
 }
 
-// ==============================
-// Xóa món
-// ==============================
-function removeItem(index) {
-  currentBill.splice(index, 1);
-  saveBillToLocalStorage(currentTableID);
-  renderBill(document.getElementById("bill-title").textContent.split("'")[1]);
-
-  if (currentBill.length === 0) updateTableStatus(currentTableID, false);
+// ==================================================
+// LOAD CATEGORY & FOOD
+// ==================================================
+function loadCategories() {
+  const select = document.getElementById("select-category");
+  select.innerHTML = `<option value="">Tất cả</option>`;
+  getData(CATEGORY_KEY).forEach((c) => {
+    select.innerHTML += `<option value="${c.CategoryID}">${c.Name}</option>`;
+  });
 }
 
-// ==============================
-// Load danh mục
-// ==============================
-async function loadCategories() {
-  try {
-    const res = await fetch("http://localhost:3000/api/categories");
-    const data = await res.json();
-    const selectCategory = document.getElementById("select-category");
-    selectCategory.innerHTML = '<option value="">Tất cả</option>';
+function loadFoodItems(categoryID = "") {
+  const select = document.getElementById("select-food");
+  select.innerHTML = `<option value="">-- Chọn món --</option>`;
 
-    data.forEach((cat) => {
-      const opt = document.createElement("option");
-      opt.value = cat.CategoryID;
-      opt.textContent = cat.Name;
-      selectCategory.appendChild(opt);
-    });
-  } catch (err) {
-    console.error(err);
-  }
+  let foods = getData(FOOD_KEY).filter((f) => f.Status);
+  if (categoryID) foods = foods.filter((f) => f.CategoryID == categoryID);
+
+  foods.sort((a, b) => a.Name.localeCompare(b.Name));
+
+  foods.forEach((f) => {
+    select.innerHTML += `
+      <option value="${f.ItemID}" data-price="${f.Price}">
+        ${f.Name}
+      </option>
+    `;
+  });
 }
 
-// ==============================
-// Load món theo danh mục (chỉ Status = 1, sắp xếp alphabet)
-// ==============================
-async function loadFoodItems(categoryID = "") {
-  try {
-    let url = "http://localhost:3000/api/food";
-    if (categoryID) url += `?categoryID=${categoryID}`;
-
-    const res = await fetch(url);
-    const data = await res.json();
-
-    const selectFood = document.getElementById("select-food");
-    selectFood.innerHTML = '<option value="">-- Chọn món --</option>';
-
-    // Lọc món đang sử dụng
-    let available = data.filter((f) => f.Status === true);
-
-    // Sắp xếp theo tên alphabet
-    available.sort((a, b) => a.Name.localeCompare(b.Name));
-
-    // Thêm vào select
-    available.forEach((food) => {
-      const opt = document.createElement("option");
-      opt.value = food.ItemID;
-      opt.dataset.price = food.Price;
-      opt.textContent = food.Name;
-      selectFood.appendChild(opt);
-    });
-
-    document.getElementById("food-price").value = "";
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-// ==============================
-// Khi chọn danh mục
-// ==============================
-document.getElementById("select-category").onchange = (e) => {
+document.getElementById("select-category").onchange = (e) =>
   loadFoodItems(e.target.value);
-};
 
-// Khi chọn món
 document.getElementById("select-food").onchange = (e) => {
-  const selected = e.target.selectedOptions[0];
-  document.getElementById("food-price").value = selected
-    ? selected.dataset.price
-    : "";
+  const opt = e.target.selectedOptions[0];
+  document.getElementById("food-price").value = opt ? opt.dataset.price : "";
 };
 
-// ==========================================================
-// 🎉 TÍNH TỰ ĐỘNG GIẢM GIÁ
-// ==========================================================
+// ==================================================
+// DISCOUNT
+// ==================================================
 function autoSetDiscount(total) {
-  const discountInput = document.getElementById("discount");
-
-  let discount = 0;
-  if (total > 1000000) discount = 7;
-  else if (total > 500000) discount = 3;
-
-  discountInput.value = discount;
+  let discount = total > 1000000 ? 7 : total > 500000 ? 3 : 0;
+  document.getElementById("discount").value = discount;
   return discount;
 }
 
-// ==========================================================
-// 🎉 THANH TOÁN (HOÀN CHỈNH – DÙNG API + GIẢM GIÁ + CLEAR BILL)
-// ==========================================================
-async function payBill() {
+// ==================================================
+// PAY BILL
+// ==================================================
+function payBill() {
   if (!currentTableID) return alert("Vui lòng chọn bàn!");
 
-  // Tính tổng tạm
   let total = 0;
   currentBill.forEach((i) => (total += i.Price * i.Quantity));
-
   if (total <= 0) return alert("Bàn chưa có món!");
 
-  // Giảm giá tự động
-  const discount = autoSetDiscount(total);
+  let discount = total > 1000000 ? 7 : total > 500000 ? 3 : 0;
   const discountAmount = (total * discount) / 100;
   const finalTotal = total - discountAmount;
 
-  // Xác nhận
+  const saleID = generateSaleID();
+  const saleDate = new Date().toLocaleString("vi-VN");
+
   if (
     !confirm(
-      `Tổng tiền: ${formatNumber(total)} đ\n` +
+      `Mã hóa đơn: ${saleID}\n` +
+        `Tổng tiền: ${formatNumber(total)} đ\n` +
         `Giảm giá: ${discount}% (-${formatNumber(discountAmount)} đ)\n` +
         `Thanh toán: ${formatNumber(finalTotal)} đ\n\nXác nhận thanh toán?`
     )
-  ) {
+  )
     return;
-  }
 
-  // Chuẩn bị dữ liệu gửi API
-  const payload = {
+  const saleData = {
+    saleID,
     tableID: currentTableID,
-    items: currentBill.map((i) => ({
-      ItemID: i.ItemID,
-      Quantity: i.Quantity,
-      Price: i.Price,
-    })),
-    totalAmount: finalTotal,
+    tableName: getTableName(currentTableID),
+    saleDate,
+    total,
+    discount,
+    finalTotal,
+    items: currentBill,
   };
 
-  try {
-    const res = await fetch("http://localhost:3000/api/sale/pay", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+  const sales = getData(SALE_KEY);
+  sales.push(saleData);
+  saveData(SALE_KEY, sales);
 
-    const data = await res.json();
+  localStorage.removeItem(`bill_${currentTableID}`);
+  currentBill = [];
 
-    if (!res.ok) {
-      alert("Lỗi thanh toán: " + data.message);
-      return;
-    }
+  updateTableStatus(currentTableID, false);
+  renderBill("");
+  loadAllTables();
 
-    alert("Thanh toán thành công!");
-
-    // Xóa bill tạm
-    localStorage.removeItem(`bill_${currentTableID}`);
-    currentBill = [];
-
-    // Cập nhật bàn -> Trống
-    updateTableStatus(currentTableID, false);
-
-    // Xóa giao diện bill
-    renderBill("Chưa chọn bàn");
-
-    // Reload danh sách bàn
-    loadAllTables();
-  } catch (err) {
-    console.error("Lỗi:", err);
-    alert("Không thể kết nối server!");
-  }
+  alert("Thanh toán thành công!\nMã hóa đơn: " + saleID);
 }
 
-// ==============================
-// Khởi tạo
-// ==============================
+// ==================================================
+// UTILS
+// ==================================================
+function getTableName(id) {
+  const t = getData(TABLE_KEY).find((t) => t.TableID == id);
+  return t ? t.TableName : "";
+}
+
+// ==================================================
+// INIT
+// ==================================================
 window.onload = () => {
   loadAllTables();
   loadCategories();

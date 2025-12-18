@@ -1,32 +1,64 @@
+// ==============================
+// LOGOUT
+// ==============================
 function logout() {
   localStorage.removeItem("currentUser");
   localStorage.removeItem("role");
   window.location.href = "login.html";
 }
+const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+if (!currentUser) {
+  alert("Bạn chưa đăng nhập!");
+  location.href = "login.html";
+}
+
+function logout() {
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("role");
+  location.href = "login.html";
+}
+// ==============================
+// KEY LOCALSTORAGE
+// ==============================
+const CATEGORY_KEY = "categories";
+const FOOD_KEY = "foods";
 
 // ==============================
-// Hàm format số thành dạng 10.000 hoặc 1.250.000
+// FORMAT GIÁ
 // ==============================
 function formatNumber(num) {
   if (isNaN(num)) return "0";
   return Number(num).toLocaleString("vi-VN");
 }
 
-// Hàm bỏ format khi người dùng nhập vào input giá
 function parsePrice(value) {
   return Number(String(value).replace(/\./g, ""));
 }
 
 // ==============================
-// Load danh mục lên dropdown
+// LOCALSTORAGE HELPER
 // ==============================
-async function loadCategoriesToDropdown() {
-  const res = await fetch("http://localhost:3000/api/categories");
-  const data = await res.json();
+function getCategories() {
+  return JSON.parse(localStorage.getItem(CATEGORY_KEY)) || [];
+}
 
+function getFoods() {
+  return JSON.parse(localStorage.getItem(FOOD_KEY)) || [];
+}
+
+function saveFoods(data) {
+  localStorage.setItem(FOOD_KEY, JSON.stringify(data));
+}
+
+// ==============================
+// LOAD CATEGORY -> DROPDOWN
+// ==============================
+function loadCategoriesToDropdown() {
+  const categories = getCategories();
   const select = document.getElementById("item-category");
   select.innerHTML = "";
-  data.forEach((cat) => {
+
+  categories.forEach((cat) => {
     const option = document.createElement("option");
     option.value = cat.CategoryID;
     option.textContent = `${cat.CategoryID} - ${cat.Name}`;
@@ -35,21 +67,19 @@ async function loadCategoriesToDropdown() {
 }
 
 // ==============================
-// Biến phân trang
+// PHÂN TRANG
 // ==============================
 let currentPage = 1;
 const pageSize = 10;
-let foodData = []; // Toàn bộ dữ liệu
-let filteredData = []; // Dữ liệu sau khi search
+let foodData = [];
+let filteredData = [];
 
 // ==============================
-// Load món
+// LOAD FOOD
 // ==============================
-async function loadFood() {
-  const res = await fetch("http://localhost:3000/api/food");
-  const data = await res.json();
+function loadFood() {
+  let data = getFoods();
 
-  // Sắp xếp theo CategoryID tăng dần, Name alphabet
   data.sort((a, b) => {
     if (a.CategoryID !== b.CategoryID) return a.CategoryID - b.CategoryID;
     return a.Name.localeCompare(b.Name);
@@ -62,22 +92,7 @@ async function loadFood() {
 }
 
 // ==============================
-// Lọc dữ liệu khi search (frontend)
-// ==============================
-function searchFood(keyword) {
-  if (!keyword) {
-    filteredData = [...foodData];
-  } else {
-    filteredData = foodData.filter((item) =>
-      item.Name.toLowerCase().includes(keyword.toLowerCase())
-    );
-  }
-  currentPage = 1;
-  renderTablePage();
-}
-
-// ==============================
-// Hiển thị trang hiện tại
+// RENDER TABLE
 // ==============================
 function renderTablePage() {
   const tbody = document.querySelector(".table tbody");
@@ -112,7 +127,7 @@ function renderTablePage() {
 }
 
 // ==============================
-// Thanh phân trang với nút trước / sau
+// PAGINATION
 // ==============================
 function renderPaginationControls() {
   const pagination = document.getElementById("pagination");
@@ -121,146 +136,123 @@ function renderPaginationControls() {
   pagination.innerHTML = "";
   const totalPages = Math.ceil(filteredData.length / pageSize);
 
-  // Nút Trang trước
   const prevBtn = document.createElement("button");
   prevBtn.textContent = "« Trước";
   prevBtn.disabled = currentPage === 1;
-  prevBtn.addEventListener("click", () => {
-    if (currentPage > 1) {
-      currentPage--;
-      renderTablePage();
-    }
-  });
+  prevBtn.onclick = () => {
+    currentPage--;
+    renderTablePage();
+  };
   pagination.appendChild(prevBtn);
 
-  // Nút số trang
   for (let i = 1; i <= totalPages; i++) {
     const btn = document.createElement("button");
     btn.textContent = i;
     btn.className = i === currentPage ? "active" : "";
-    btn.addEventListener("click", () => {
+    btn.onclick = () => {
       currentPage = i;
       renderTablePage();
-    });
+    };
     pagination.appendChild(btn);
   }
 
-  // Nút Trang sau
   const nextBtn = document.createElement("button");
   nextBtn.textContent = "Sau »";
   nextBtn.disabled = currentPage === totalPages;
-  nextBtn.addEventListener("click", () => {
-    if (currentPage < totalPages) {
-      currentPage++;
-      renderTablePage();
-    }
-  });
+  nextBtn.onclick = () => {
+    currentPage++;
+    renderTablePage();
+  };
   pagination.appendChild(nextBtn);
 }
 
 // ==============================
-// Thêm sự kiện tìm kiếm
+// SEARCH
 // ==============================
-const searchInput = document.querySelector(".search-box-1 input");
-
-searchInput.addEventListener("input", () => {
-  const keyword = searchInput.value.trim().toLowerCase();
-
-  if (!keyword) {
-    // nếu trống, hiển thị tất cả
-    filteredData = [...foodData];
-  } else {
-    // lọc theo tên món
-    filteredData = foodData.filter((item) =>
-      item.Name.toLowerCase().includes(keyword)
-    );
-  }
-
-  currentPage = 1; // reset về trang đầu
+document.querySelector(".search-box-1 input").addEventListener("input", (e) => {
+  const keyword = e.target.value.toLowerCase();
+  filteredData = foodData.filter((item) =>
+    item.Name.toLowerCase().includes(keyword)
+  );
+  currentPage = 1;
   renderTablePage();
 });
 
 // ==============================
-// Thêm món
+// ADD FOOD
 // ==============================
-async function addFood() {
+function addFood() {
   const name = document.getElementById("item-name").value.trim();
   const categoryID = parseInt(document.getElementById("item-category").value);
   const price = parsePrice(document.getElementById("item-price").value);
   const status = parseInt(document.getElementById("item-status").value);
 
   if (!name) return alert("Vui lòng nhập tên món!");
-  if (isNaN(categoryID)) return alert("Vui lòng chọn danh mục!");
-  if (isNaN(price) || price <= 0) return alert("Vui lòng nhập giá hợp lệ!");
-  if (isNaN(status)) return alert("Vui lòng chọn trạng thái!");
+  if (isNaN(categoryID)) return alert("Chọn danh mục!");
+  if (isNaN(price) || price <= 0) return alert("Giá không hợp lệ!");
 
-  try {
-    const res = await fetch("http://localhost:3000/api/food", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, categoryID, price, status }),
-    });
+  let foods = getFoods();
 
-    const data = await res.json();
+  const newFood = {
+    ItemID: foods.length > 0 ? Math.max(...foods.map((f) => f.ItemID)) + 1 : 1,
+    Name: name,
+    CategoryID: categoryID,
+    Price: price,
+    Status: status === 1,
+  };
 
-    if (!res.ok) {
-      alert(data.message || "Có lỗi xảy ra khi thêm món");
-      return;
-    }
+  foods.push(newFood);
+  saveFoods(foods);
 
-    alert("Thêm món thành công!");
-    loadFood();
-    clearForm();
-  } catch (err) {
-    alert("Không thể kết nối tới server!");
-    console.error(err);
-  }
-}
-
-// ==============================
-// Sửa món
-// ==============================
-async function updateFood() {
-  const id = parseInt(document.getElementById("item-id").value);
-  if (!id) return alert("Hãy chọn món!");
-
-  const name = document.getElementById("item-name").value;
-  const categoryID = parseInt(document.getElementById("item-category").value);
-  const price = parsePrice(document.getElementById("item-price").value);
-  const status = parseInt(document.getElementById("item-status").value);
-
-  const res = await fetch(`http://localhost:3000/api/food/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, categoryID, price, status }),
-  });
-
-  const data = await res.json();
-  alert(data.message);
+  alert("Thêm món thành công!");
   loadFood();
   clearForm();
 }
 
 // ==============================
-// Xóa món
+// UPDATE FOOD
 // ==============================
-async function deleteFood() {
+function updateFood() {
+  const id = parseInt(document.getElementById("item-id").value);
+  if (!id) return alert("Hãy chọn món!");
+
+  let foods = getFoods();
+  const index = foods.findIndex((f) => f.ItemID === id);
+  if (index === -1) return alert("Món không tồn tại!");
+
+  foods[index].Name = document.getElementById("item-name").value;
+  foods[index].CategoryID = parseInt(
+    document.getElementById("item-category").value
+  );
+  foods[index].Price = parsePrice(document.getElementById("item-price").value);
+  foods[index].Status =
+    parseInt(document.getElementById("item-status").value) === 1;
+
+  saveFoods(foods);
+
+  alert("Cập nhật thành công!");
+  loadFood();
+  clearForm();
+}
+
+// ==============================
+// DELETE FOOD
+// ==============================
+function deleteFood() {
   const id = parseInt(document.getElementById("item-id").value);
   if (!id) return alert("Hãy chọn món!");
   if (!confirm("Bạn chắc chắn muốn xóa?")) return;
 
-  const res = await fetch(`http://localhost:3000/api/food/${id}`, {
-    method: "DELETE",
-  });
-  const data = await res.json();
+  let foods = getFoods().filter((f) => f.ItemID !== id);
+  saveFoods(foods);
 
-  alert(data.message);
+  alert("Xóa thành công!");
   loadFood();
   clearForm();
 }
 
 // ==============================
-// Clear form
+// CLEAR FORM
 // ==============================
 function clearForm() {
   document.getElementById("item-id").value = "";
@@ -270,20 +262,18 @@ function clearForm() {
 }
 
 // ==============================
-// Xuất Excel / PDF
+// EXPORT (MÔ PHỎNG)
 // ==============================
-function exportExcel(tableName) {
-  if (!tableName) return alert("Không xác định bảng để xuất Excel!");
-  window.open(`http://localhost:3000/api/export/${tableName}/excel`);
+function exportExcel() {
+  alert("Export Excel mô phỏng (không backend)");
 }
 
-function exportPDF(tableName) {
-  if (!tableName) return alert("Không xác định bảng để xuất PDF!");
-  window.open(`http://localhost:3000/api/export/${tableName}/pdf`);
+function exportPDF() {
+  alert("Export PDF mô phỏng (không backend)");
 }
 
 // ==============================
-// Khởi chạy
+// INIT
 // ==============================
 window.onload = () => {
   loadCategoriesToDropdown();

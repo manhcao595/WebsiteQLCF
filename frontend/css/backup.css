@@ -232,6 +232,18 @@ nav ul li.active {
 }
 
 /* CONTENT */
+.container {
+  min-height: 50vh;
+  display: flex;
+  justify-content: center; /* căn giữa ngang */
+  align-items: center; /* căn giữa dọc */
+}
+
+.card {
+  width: 420px; /* giữ chiều dài cố định */
+  max-width: 50%; /* không tràn trên mobile */
+}
+
 .content {
   padding: 24px;
 }
@@ -373,23 +385,28 @@ nav ul li.active {
 }
 
 /* Responsive */
-@media (max-width: 900px) {
-  .action-row,
-  .bottom-row {
-    flex-direction: column;
-  }
+@media (max-width: 992px) {
   .sidebar {
     display: none;
   }
+
+  .main {
+    margin-left: 0;
+  }
 }
+
 @media (max-width: 768px) {
-  .tables {
-    grid-template-columns: repeat(3, 1fr);
+  .card {
+    width: 90%;
   }
 }
 
 @media (max-width: 480px) {
-  .tables {
-    grid-template-columns: repeat(2, 1fr);
+  .card {
+    width: 100%;
+  }
+
+  .card-header {
+    font-size: 16px;
   }
 }

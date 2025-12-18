@@ -3,7 +3,17 @@ function logout() {
   localStorage.removeItem("role");
   window.location.href = "login.html";
 }
+const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+if (!currentUser) {
+  alert("Bạn chưa đăng nhập!");
+  location.href = "login.html";
+}
 
+function logout() {
+  localStorage.removeItem("currentUser");
+  localStorage.removeItem("role");
+  location.href = "login.html";
+}
 function changePassword() {
   const oldPass = document.getElementById("oldPass").value.trim();
   const newPass = document.getElementById("newPass").value.trim();
